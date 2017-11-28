@@ -19,12 +19,11 @@ public class BugAlgorithm {
 	final static double AXLE_LENGTH = .122;
 	
 	static double mOrientation = Math.PI/ 2.0;
-	static double mLeftX = -AXLE_LENGTH/2.0;
+	static double mLeftX = -AXLE_LENGTH/2.0 + 1.0;
 	static double mLeftY = 0.0;
-	static double mRightX = AXLE_LENGTH/2.0;;
+	static double mRightX = AXLE_LENGTH/2.0 + 1.0;
 	static double mRightY = 0.0;
-	static boolean mHasExitedHitpoint = false;
-	static double[] mHitpoint = new double[2];
+	static double[] mGoal = new double[] {1.8, 1.8};
 	
 	static EV3MediumRegulatedMotor left;
 	static EV3MediumRegulatedMotor right;
@@ -34,6 +33,8 @@ public class BugAlgorithm {
 	static float[] touchLeftSample;
 	static float[] touchRightSample;
 	static float[] sonicSample;
+
+	static long startTime; //the time the robot starts moving in nanoseconds
 	
 	public static void main(String[] args) {
 		left = new EV3MediumRegulatedMotor(MotorPort.A);
@@ -199,8 +200,44 @@ private static void followWall() {
 		//float distanceToHome = (float) sqrt(mHitpoint[0] * mHitpoint[0] +  mHitpoint[1] * mHitpoint[1]);
 		move(distanceToHome, false);
 	}
-	
 
+
+//loop in which it goes to goal, detects collision
+private static void goToGoal(){
+
+	long time;
+	if (getDistance(getCenterCoords(), mGoal) < .3 && isTimeLeft){
+		left.setSpeed(speed);
+		right.setSpeed(speed);
+
+		time = System.nanoTime();
+
+		left.startSynchronization();
+		right.stop();
+		left.stop();
+		left.endSynchronization();
+
+	}
+
+	touchLeft.fetchSample(touchLeftSample, 0);
+	touchRight.fetchSample(touchRightSample, 0);
+
+	while(getDistance(getCenterCoords(), mGoal) < .3 && isTimeLeft()){
+		if (touchRightSample[0] != 0 || touchLeftSample[0] != 0){
+			updateCoordsLinear(time);
+		}
+		else{
+			break;
+		}
+
+
+		touchLeft.fetchSample(touchLeftSample, 0);
+		touchRight.fetchSample(touchRightSample, 0);
+		time = System.nanoTime();
+	}
+
+	//TODO: add finish state
+}
 private static void move(float distanceToGo, boolean wallReturn) {
 	move(distanceToGo, 180, wallReturn);
 }
@@ -243,6 +280,11 @@ private static void move(float distanceToGo, int speed, boolean wallReturn) {
 
 private static void rotateAngle(float angle) {
 	assert (right.getRotationSpeed() == 0 || left.getRotationSpeed() == 0);
+	if(Math.abs(angle) > Math.abs(getAngleToGoal())){
+		rotateAngle(getAngleToGoal());
+		goToGoal();
+		return;
+	}
 	long initTime = System.nanoTime();
 	long timeToRotate;
 	float desiredAngularVelocity;
@@ -284,6 +326,7 @@ private static void rotateAngle(float angle) {
 		mRightX = mLeftX + AXLE_LENGTH * (Math.cos(angle + mOrientation - Math.PI/2.0));
 		mRightY = mLeftY + AXLE_LENGTH * (Math.sin(angle + mOrientation - Math.PI/2.0));
 		
+		if (mOrientation > 2. * Math.PI)
 		
 	} else {	//turning right
 		wheelRotationSpeedDegrees = left.getRotationSpeed();
@@ -449,6 +492,15 @@ private static float getDistance(double[] p1,double[] p2){
 	return d;		
 }
 
+private static float getAngleToGoal() {
+	double[] centerCoords = getCenterCoords();
+	double[] goalVector = new double[] {mGoal[0] - centerCoords[0], mGoal[1] - centerCoords[1] };//vector to goal
+	float angle = (float) (Math.atan2(goalVector[1], goalVector[0]));
+}
+
+private boolean isTimeLeft(){
+
+}
 }
 
 
