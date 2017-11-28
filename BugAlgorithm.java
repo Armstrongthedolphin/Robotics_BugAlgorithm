@@ -50,48 +50,42 @@ public class BugAlgorithm {
 		touchRightSample = new float[touchRight.sampleSize()];
 		sonicSample = new float[sonic.sampleSize()];
 		
-		// start and head forward
+		// start, turn to goal and head forward
 		start=getCenterCoords();
 		Sound.beep();
 		Button.ENTER.waitForPressAndRelease();
-		System.out.println("Moving forward");
 		long timestamp = System.nanoTime();
-		left.startSynchronization();
-		right.forward();
-		left.forward();
-		left.endSynchronization();
 		
-
-		// stop and beep when you hit a wall
-		touchLeft.fetchSample(touchLeftSample, 0);
-		touchRight.fetchSample(touchRightSample, 0);
-		while (touchLeftSample[0] == 0 || touchRightSample[0] == 0) {
+		while(){
+			goToGoal();
+			// stop and beep when you hit a wall
 			touchLeft.fetchSample(touchLeftSample, 0);
 			touchRight.fetchSample(touchRightSample, 0);
+			while (touchLeftSample[0] == 0 || touchRightSample[0] == 0) {
+				touchLeft.fetchSample(touchLeftSample, 0);
+				touchRight.fetchSample(touchRightSample, 0);
+			}
+			Sound.beep();
+			updateCoordsLinear(timestamp);
+			left.startSynchronization();
+			right.stop();
+			left.stop();
+			left.endSynchronization();
+		//		Button.ENTER.waitForPressAndRelease();
+			// back up 15cm
+			System.out.println("Moving Backwards");
+			move(-.15f, false);
+			mHitpoint = getCenterCoords();
+			mHitpoint[1] =  mHitpoint[1]+0.05;
+			System.out.println("Hitpoint Coords: " + getCenterCoords()[0] + ", " + getCenterCoords()[1]);
+			//turn right 
+			System.out.println("turn right");
+			rotateAngle((float) (-Math.PI/2.0));
+			Sound.beep();
+			//stop following wall when it's orientation is facing goal
+			followWall();
 		}
-		Sound.beep();
-		updateCoordsLinear(timestamp);
-		left.startSynchronization();
-		right.stop();
-		left.stop();
-		left.endSynchronization();
-//		Button.ENTER.waitForPressAndRelease();
-
-		// back up 15cm
-		System.out.println("Moving Backwards");
-		move(-.15f, false);
-		mHitpoint = getCenterCoords();
-		mHitpoint[1] =  mHitpoint[1]+0.05;
-		System.out.println("Hitpoint Coords: " + getCenterCoords()[0] + ", " + getCenterCoords()[1]);
-
 		
-		//turn right 
-		System.out.println("turn right");
-
-		rotateAngle((float) (-Math.PI/2.0));
-		Sound.beep();
-
-		followWall();
 	}
 		
 	
@@ -498,9 +492,16 @@ private static float getAngleToGoal() {
 	float angle = (float) (Math.atan2(goalVector[1], goalVector[0]));
 }
 
+//TODO: This
 private boolean isTimeLeft(){
 
 }
+
+private static boolean isAtGoal() {
+	boolean isAtGoal = getDistance(getCenterCoords(), mGoal) < .2f;
+	return isAtgoal;
+}
+
 }
 
 
