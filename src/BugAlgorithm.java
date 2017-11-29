@@ -51,12 +51,12 @@ public class BugAlgorithm {
 		sonicSample = new float[sonic.sampleSize()];
 		
 		// start, turn to goal and head forward
-		start=getCenterCoords();
 		Sound.beep();
 		Button.ENTER.waitForPressAndRelease();
 		long timestamp = System.nanoTime();
 		
-		while(){
+		while(!isAtGoal()){
+			
 			goToGoal();
 			// stop and beep when you hit a wall
 			touchLeft.fetchSample(touchLeftSample, 0);
@@ -71,13 +71,9 @@ public class BugAlgorithm {
 			right.stop();
 			left.stop();
 			left.endSynchronization();
-		//		Button.ENTER.waitForPressAndRelease();
 			// back up 15cm
 			System.out.println("Moving Backwards");
 			move(-.15f, false);
-			mHitpoint = getCenterCoords();
-			mHitpoint[1] =  mHitpoint[1]+0.05;
-			System.out.println("Hitpoint Coords: " + getCenterCoords()[0] + ", " + getCenterCoords()[1]);
 			//turn right 
 			System.out.println("turn right");
 			rotateAngle((float) (-Math.PI/2.0));
@@ -119,12 +115,19 @@ private static void followWall() {
 
 		while (forever) {
 
+			if(!isTimeLeft()){
+				System.out.println("Time is uuuuuup");
+				left.startSynchronization();
+				right.stop();
+				left.stop();
+				left.endSynchronization();
+				Button.ENTER.waitForPressAndRelease();
+				
+			}
 			newerror = ssample - setDistance;
 			errordiff = newerror - error; // if positive, error increase
-			// System.out.print("E " + newerror + " " + errordiff + " ");
-
             //according to the error difference, adjust the angle with one wheel set to speed 0
-			if ( mHasExitedHitpoint && (Math.abs(getCenterCoords()[0] - mHitpoint[0]) < .10) 
+			if ( (Math.abs(getCenterCoords()[0] - mHitpoint[0]) < .10) 
 					&&  (Math.abs(getCenterCoords()[1] - mHitpoint[1]) < .10)){//end of the wall, break loopn
 				break;
 			}else {
@@ -134,16 +137,6 @@ private static void followWall() {
 				}
 
 			}
-			// } else if(abs(errordiff) > setbuffer){
-			// //adjust angle
-			// //calculate distance traveled
-			// distanceTraveled = (float) ( initspeed * travelTime*0.001 * (Math.PI /
-			// 360) * RADIUS); //m
-			// System.out.print("D " + distanceTraveled + " " );//15.118915
-			// adjustAngle = calculateAngle(error, newerror,distanceTraveled );
-			// rotateAngle(adjustAngle, left, right);
-			//
-			// }
 
 			timestamp = System.nanoTime();
 			while (System.nanoTime() < timestamp + travelTime) {
@@ -181,18 +174,12 @@ private static void followWall() {
 			touchRight.fetchSample(touchRightSample, 0);
 			updateCoordsLinear(timestamp);
 		}
-		System.out.println("Going home! " + mOrientation);
+		System.out.println("GoToGoal! " + mOrientation);
 		left.startSynchronization();
 		right.stop();
 		left.stop();
 		left.endSynchronization();
 		Sound.beep();
-		
-		//rotate to face home, go home
-		rotateAngle((float) (-mOrientation - Math.PI/2.0));
-		float distanceToHome = getDistance(getCenterCoords(),start);
-		//float distanceToHome = (float) sqrt(mHitpoint[0] * mHitpoint[0] +  mHitpoint[1] * mHitpoint[1]);
-		move(distanceToHome, false);
 	}
 
 
@@ -493,13 +480,14 @@ private static float getAngleToGoal() {
 }
 
 //TODO: This
-private boolean isTimeLeft(){
+private static boolean isTimeLeft(){
+	return false;
 
 }
 
 private static boolean isAtGoal() {
 	boolean isAtGoal = getDistance(getCenterCoords(), mGoal) < .2f;
-	return isAtgoal;
+	return isAtGoal;
 }
 
 }
