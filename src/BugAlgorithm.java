@@ -460,7 +460,7 @@ private static float getDistance(double[] p1,double[] p2){
 private static float getAngleToGoal() {
 	double[] centerCoords = getCenterCoords();
 	double[] goalVector = new double[] {mGoal[0] - centerCoords[0], mGoal[1] - centerCoords[1] };//vector to goal
-	float angle = (float) (Math.atan2(goalVector[1], goalVector[0]));
+	float angle = (float) (Math.atan2(goalVector[1], goalVector[0])-mOrientation);
 	
 	return angle;
 }
