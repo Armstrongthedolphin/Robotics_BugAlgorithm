@@ -105,7 +105,7 @@ private static void followWall() {
 			}else {
 				if(newerror< -1*setbuffer || newerror> setbuffer){//if drifting left from the offset turn right
 					adjustAngle = calculateAngle(error, newerror, distanceTraveled );
-					rotateAngle(adjustAngle);
+					rotateAngle(adjustAngle, true);
 				}
 
 			}
@@ -123,7 +123,7 @@ private static void followWall() {
                     ssample = fetchSonicSample();
                     error = ssample - setDistance;
 					
-					rotateAngle( (float) (-Math.PI/3.0));
+					rotateAngle( (float) (-Math.PI/3.0), true);
 					move( .10f,160, false);
                     ssample = fetchSonicSample();
                     newerror = ssample - setDistance;
@@ -193,7 +193,7 @@ private static void goToGoal(){
 			}
 			
 			if (getAngleToGoal() > tolerance) {
-				rotateAngle(getAngleToGoal());
+				rotateAngle(getAngleToGoal(), false);
 			}
 			touchLeft.fetchSample(touchLeftSample, 0);
 			touchRight.fetchSample(touchRightSample, 0);
@@ -206,7 +206,7 @@ private static void goToGoal(){
 	left.endSynchronization();
 	
 	Sound.beep();
-	System.out.println("Ran out of time?);
+	System.out.println("Ran out of time?");
 	Button.ENTER.waitForPressAndRelease();
 	System.exit(0);
 }
