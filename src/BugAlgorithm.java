@@ -162,7 +162,7 @@ private static void goToGoal(){
 	long time;
 	double tolerance = Math.PI / 7.0;
 	
-	if (getDistance(getCenterCoords(), mGoal) < .3 && isTimeLeft()){
+	if (getDistance(getCenterCoords(), mGoal) > .3 && isTimeLeft()){
 		left.setSpeed(160);
 		right.setSpeed(160);
 
@@ -179,7 +179,7 @@ private static void goToGoal(){
 	
 		//while time remains and we haven't reached the goal, go towards the goal
 		//and make path adjustments as needed
-		while(getDistance(getCenterCoords(), mGoal) < .3 && isTimeLeft()){
+		while(getDistance(getCenterCoords(), mGoal) > .3 && isTimeLeft()){
 			updateCoordsLinear(time);
 			time = System.nanoTime();
 			
@@ -206,6 +206,7 @@ private static void goToGoal(){
 	left.endSynchronization();
 	
 	Sound.beep();
+	System.out.println("Ran out of time?);
 	Button.ENTER.waitForPressAndRelease();
 	System.exit(0);
 }
@@ -239,7 +240,7 @@ private static void move(float distanceToGo, int speed, boolean wallReturn) {
 				Sound.beep();
 				move(-.15f, false);
 
-				rotateAngle((float) (-Math.PI/2.0));
+				rotateAngle((float) (-Math.PI/2.0), true);
 
 				followWall();
 				break;
@@ -249,11 +250,12 @@ private static void move(float distanceToGo, int speed, boolean wallReturn) {
 	updateCoordsLinear(timestamp, distanceToGo);
 }
 
-private static void rotateAngle(float angle) {
+// toGoal 
+private static void rotateAngle(float angle, boolean toGoal) {
 	assert (right.getRotationSpeed() == 0 || left.getRotationSpeed() == 0);
 	double tolerance = Math.PI / 7.0;
-	if(Math.abs(angle) - Math.abs(getAngleToGoal()) < tolerance){
-		rotateAngle(getAngleToGoal());
+	if(Math.abs(angle) - Math.abs(getAngleToGoal()) < tolerance && toGoal){
+		rotateAngle(getAngleToGoal(), false);
 		goToGoal();
 		return;
 	}
@@ -464,7 +466,7 @@ private static float getAngleToGoal() {
 }
 
 private static boolean isTimeLeft(){
-	return(System.nanoTime() - mStartTime > 170000000000l);
+	return(System.nanoTime() - mStartTime < 170000000000l);
 	//170000000000l is 2 minutes 50 seconds in nanotime
 }
 
