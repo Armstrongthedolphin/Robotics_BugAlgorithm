@@ -264,7 +264,7 @@ private static void rotateAngle(float angle, boolean toGoal) {
 	assert (right.getRotationSpeed() == 0 || left.getRotationSpeed() == 0);
 	double tolerance = Math.PI / 7.0;
 	if(Math.abs(angle) - Math.abs(getAngleToGoal()) < tolerance && toGoal){
-		rotateAngle(getAngleToGoal(), false);
+		//rotateAngle(getAngleToGoal(), false);
 		goToGoal();
 		return;
 	}
