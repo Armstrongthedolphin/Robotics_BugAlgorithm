@@ -163,8 +163,8 @@ private static void goToGoal(){
 	double tolerance = Math.PI / 7.0;
 	
 	if (getDistance(getCenterCoords(), mGoal) < .3 && isTimeLeft()){
-		left.setSpeed(200);
-		right.setSpeed(200);
+		left.setSpeed(160);
+		right.setSpeed(160);
 
 		time = System.nanoTime();
 
