@@ -34,7 +34,7 @@ public class BugAlgorithm {
 	static float[] touchRightSample;
 	static float[] sonicSample;
 
-	static long startTime; //the time the robot starts moving in nanoseconds
+	static long mStartTime; //the time the robot starts moving in nanoseconds
 	
 	public static void main(String[] args) {
 		left = new EV3MediumRegulatedMotor(MotorPort.A);
@@ -51,41 +51,11 @@ public class BugAlgorithm {
 		sonicSample = new float[sonic.sampleSize()];
 		
 		// start, turn to goal and head forward
-		start=getCenterCoords();
 		Sound.beep();
 		Button.ENTER.waitForPressAndRelease();
-		long timestamp = System.nanoTime();
+		mStartTime = System.nanoTime();
 		
-		while(){
-			goToGoal();
-			// stop and beep when you hit a wall
-			touchLeft.fetchSample(touchLeftSample, 0);
-			touchRight.fetchSample(touchRightSample, 0);
-			while (touchLeftSample[0] == 0 || touchRightSample[0] == 0) {
-				touchLeft.fetchSample(touchLeftSample, 0);
-				touchRight.fetchSample(touchRightSample, 0);
-			}
-			Sound.beep();
-			updateCoordsLinear(timestamp);
-			left.startSynchronization();
-			right.stop();
-			left.stop();
-			left.endSynchronization();
-		//		Button.ENTER.waitForPressAndRelease();
-			// back up 15cm
-			System.out.println("Moving Backwards");
-			move(-.15f, false);
-			mHitpoint = getCenterCoords();
-			mHitpoint[1] =  mHitpoint[1]+0.05;
-			System.out.println("Hitpoint Coords: " + getCenterCoords()[0] + ", " + getCenterCoords()[1]);
-			//turn right 
-			System.out.println("turn right");
-			rotateAngle((float) (-Math.PI/2.0));
-			Sound.beep();
-			//stop following wall when it's orientation is facing goal
-			followWall();
-		}
-		
+		goToGoal();
 	}
 		
 	
@@ -105,7 +75,6 @@ private static void followWall() {
 		float infinity = .30f;
 		long travelTime = 250000000; // in nanoseconds
 		long timestamp;
-		boolean forever = true;
 
 		left.startSynchronization();
 		right.forward();// left wheel
@@ -117,7 +86,7 @@ private static void followWall() {
 		touchLeft.fetchSample(touchLeftSample, 0);
 		touchRight.fetchSample(touchRightSample, 0);
 
-		while (forever) {
+		while (true) {
 
 			newerror = ssample - setDistance;
 			errordiff = newerror - error; // if positive, error increase
@@ -200,37 +169,54 @@ private static void followWall() {
 private static void goToGoal(){
 
 	long time;
-	if (getDistance(getCenterCoords(), mGoal) < .3 && isTimeLeft){
-		left.setSpeed(speed);
-		right.setSpeed(speed);
+	double tolerance = Math.PI / 7.0;
+	
+	if (getDistance(getCenterCoords(), mGoal) < .3 && isTimeLeft()){
+		left.setSpeed(200);
+		right.setSpeed(200);
 
 		time = System.nanoTime();
 
 		left.startSynchronization();
-		right.stop();
-		left.stop();
+		right.start();
+		left.start();
 		left.endSynchronization();
 
-	}
-
-	touchLeft.fetchSample(touchLeftSample, 0);
-	touchRight.fetchSample(touchRightSample, 0);
-
-	while(getDistance(getCenterCoords(), mGoal) < .3 && isTimeLeft()){
-		if (touchRightSample[0] != 0 || touchLeftSample[0] != 0){
-			updateCoordsLinear(time);
-		}
-		else{
-			break;
-		}
-
-
+	
 		touchLeft.fetchSample(touchLeftSample, 0);
 		touchRight.fetchSample(touchRightSample, 0);
-		time = System.nanoTime();
-	}
+	
+		//while time remains and we haven't reached the goal, go towards the goal
+		//and make path adjustments as needed
+		while(getDistance(getCenterCoords(), mGoal) < .3 && isTimeLeft()){
+			updateCoordsLinear(time);
+			time = System.nanoTime();
+			
+			if (touchRightSample[0] != 0 || touchLeftSample[0] != 0){
+				updateCoordsLinear(timestamp);
+				Sound.beep();
+				System.out.println("Collision detected");
 
-	//TODO: add finish state
+				move( -.15f,160, false);
+				followWall();
+			}
+			
+			if (getAngleToGoal() > tolerance) {
+				rotateAngle(getAngleToGoal());
+			}
+			touchLeft.fetchSample(touchLeftSample, 0);
+			touchRight.fetchSample(touchRightSample, 0);
+		}
+	}
+	
+	left.startSynchronization();
+	right.stop();
+	left.stop();
+	left.endSynchronization();
+	
+	Sound.beep();
+	Button.ENTER.waitForPressAndRelease();
+	System.exit(0);
 }
 private static void move(float distanceToGo, boolean wallReturn) {
 	move(distanceToGo, 180, wallReturn);
@@ -274,7 +260,8 @@ private static void move(float distanceToGo, int speed, boolean wallReturn) {
 
 private static void rotateAngle(float angle) {
 	assert (right.getRotationSpeed() == 0 || left.getRotationSpeed() == 0);
-	if(Math.abs(angle) > Math.abs(getAngleToGoal())){
+	double tolerance = Math.PI / 7.0;
+	if(Math.abs(angle) - Math.abs(getAngleToGoal()) < tolerance){
 		rotateAngle(getAngleToGoal());
 		goToGoal();
 		return;
@@ -320,8 +307,6 @@ private static void rotateAngle(float angle) {
 		mRightX = mLeftX + AXLE_LENGTH * (Math.cos(angle + mOrientation - Math.PI/2.0));
 		mRightY = mLeftY + AXLE_LENGTH * (Math.sin(angle + mOrientation - Math.PI/2.0));
 		
-		if (mOrientation > 2. * Math.PI)
-		
 	} else {	//turning right
 		wheelRotationSpeedDegrees = left.getRotationSpeed();
 		System.out.println("Going right!");
@@ -354,14 +339,17 @@ private static void rotateAngle(float angle) {
 		mLeftX = mRightX + AXLE_LENGTH * (Math.cos(angle + mOrientation - Math.PI/2.0));
 		mLeftY = mRightY + AXLE_LENGTH * (Math.sin(angle + mOrientation - Math.PI/2.0));
 	}
+	
 	left.setSpeed(wheelRotationSpeedDegrees);
 	right.setSpeed(wheelRotationSpeedDegrees);
 	mOrientation += angle;
+	
 	if (mOrientation > (2.0 * Math.PI)) {
 		mOrientation -= 2.0 * Math.PI;
 	} else if (mOrientation < (-2.0 * Math.PI)) {
 		mOrientation += 2.0 * Math.PI;
 	}
+}
 	
 private static float calculateAngle(float sonar0, float sonar1, float distanceTravelled) {
 		float angle;
@@ -439,13 +427,6 @@ private static boolean checkAcceptable(float s[]) {
 }
 
 private static void updateCoordsLinear(long previousTime) {
-	if (!mHasExitedHitpoint && (mHitpoint[0] != 0.0 || mHitpoint[1] != 0.0)){
-		if(Math.abs(mHitpoint[0] - getCenterCoords()[0]) > .3 || Math.abs(mHitpoint[1] - getCenterCoords()[1]) > .3){
-			mHasExitedHitpoint = true;
-			System.out.println("Exited Hit Bubble");
-			Sound.beep();
-		}
-	}
 	
 	double RightwheelRotationSpeedDegrees = (double) right.getRotationSpeed();
 	double LeftwheelRotationSpeedDegrees = (double) left.getRotationSpeed();
@@ -459,10 +440,7 @@ private static void updateCoordsLinear(long previousTime) {
 	mLeftY += distance * Math.sin(mOrientation);
 	mRightY += distance * Math.sin(mOrientation);
 	
-	// if(mHasExitedHitpoint){
-		System.out.println("Coords: " + getCenterCoords()[0] + ", " + getCenterCoords()[1]);
-	// }
-	//if it hasn't left the initialized hitpoint yet
+	System.out.println("Coords: " + getCenterCoords()[0] + ", " + getCenterCoords()[1]);
 }
 
 private static void updateCoordsLinear(long previousTime, double distance){
@@ -490,16 +468,18 @@ private static float getAngleToGoal() {
 	double[] centerCoords = getCenterCoords();
 	double[] goalVector = new double[] {mGoal[0] - centerCoords[0], mGoal[1] - centerCoords[1] };//vector to goal
 	float angle = (float) (Math.atan2(goalVector[1], goalVector[0]));
+	
+	return angle;
 }
 
-//TODO: This
-private boolean isTimeLeft(){
-
+private static boolean isTimeLeft(){
+	return(System.nanoTime() - mStartTime > 170000000000l);
+	//170000000000l is 2 minutes 50 seconds in nanotime
 }
 
 private static boolean isAtGoal() {
 	boolean isAtGoal = getDistance(getCenterCoords(), mGoal) < .2f;
-	return isAtgoal;
+	return isAtGoal;
 }
 
 }
