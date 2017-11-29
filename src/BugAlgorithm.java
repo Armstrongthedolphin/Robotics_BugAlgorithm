@@ -126,6 +126,7 @@ private static void followWall() {
 					
 					rotateAngle( (float) (-Math.PI/3.0), false);
 					move( .10f,160, false);
+
                     ssample = fetchSonicSample();
                     newerror = ssample - setDistance;
 
@@ -152,7 +153,6 @@ private static void followWall() {
 		right.stop();
 		left.stop();
 		left.endSynchronization();
-		Sound.beep();
 		goToGoal();
 	}
 
@@ -160,6 +160,7 @@ private static void followWall() {
 //loop in which it goes to goal, detects collision
 private static void goToGoal(){
 	System.out.println("goToGoal");
+	Sound.beepSequenceUp();
 	long time;
 	float tolerance = (float) 0.1;
 	
@@ -469,7 +470,7 @@ private static float getDistance(double[] p1,double[] p2){
 private static float getAngleToGoal() {
 	double[] centerCoords = getCenterCoords();
 	double[] goalVector = new double[] {mGoal[0] - centerCoords[0], mGoal[1] - centerCoords[1] };//vector to goal
-	float angle = (float) (Math.atan2(goalVector[1], goalVector[0])-mOrientation);
+	float angle = (float) (Math.atan2(goalVector[0], goalVector[1]) - mOrientation);
 	
 	return angle;
 }
