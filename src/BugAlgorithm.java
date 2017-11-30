@@ -170,7 +170,7 @@ private static void goToGoal(){
 		right.setSpeed(160);
 
 		time = System.nanoTime();
-
+		System.out.println(getAngleToGoal());
 		rotateAngle(getAngleToGoal(), false);
 		
 		left.startSynchronization();
@@ -196,12 +196,12 @@ private static void goToGoal(){
 	
 				System.out.println("Collision detected");
 				move( -.15f,160, false);
-				rotateAngle((float) (-Math.PI/2.0),false);
+				rotateAngle((float) (-Math.PI/4.0),false);
 				Sound.beep();
 				followWall();
 			}
 
-			if (getAngleToGoal() > tolerance) {
+			if (Math.abs(getAngleToGoal()) > tolerance) {
 
 				rotateAngle(getAngleToGoal(), false);
 			}
@@ -265,8 +265,8 @@ private static void rotateAngle(float angle, boolean toGoal) {
 	assert (right.getRotationSpeed() == 0 || left.getRotationSpeed() == 0);
 
 	double tolerance = Math.PI / 36.0;
-	if(Math.abs(angle) - Math.abs(getAngleToGoal()) < tolerance && toGoal){
-		//rotateAngle(getAngleToGoal(), false);
+	if(Math.abs(angle - getAngleToGoal()) < tolerance && toGoal){
+		rotateAngle(getAngleToGoal(), false);
 		goToGoal();
 		return;
 	}
@@ -344,8 +344,8 @@ private static void rotateAngle(float angle, boolean toGoal) {
 		mLeftY = mRightY + AXLE_LENGTH * (Math.sin(angle + mOrientation - Math.PI/2.0));
 	}
 	
-	left.setSpeed(wheelRotationSpeedDegrees);
-	right.setSpeed(wheelRotationSpeedDegrees);
+	left.setSpeed(160);
+	right.setSpeed(160);
 	mOrientation += angle;
 	
 	if (mOrientation > (2.0 * Math.PI)) {
@@ -471,7 +471,7 @@ private static float getDistance(double[] p1,double[] p2){
 private static float getAngleToGoal() {
 	double[] centerCoords = getCenterCoords();
 	double[] goalVector = new double[] {mGoal[0] - centerCoords[0], mGoal[1] - centerCoords[1] };//vector to goal
-	float angle = (float) (Math.atan2(goalVector[0], goalVector[1]) - mOrientation);
+	float angle = (float) (Math.atan2(goalVector[1], goalVector[0]) - mOrientation);
 	
 	return angle;
 }
